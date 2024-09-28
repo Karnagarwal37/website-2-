@@ -1,0 +1,540 @@
+const LOGO_TXT = "https://static.wixstatic.com/media/logo-txt.png";
+const LOGO_IMG = "https://static.wixstatic.com/media/logo-img.png";
+const LOGO_PHONE = "https://static.wixstatic.com/media/logo-phone.png";
+
+const STYLE = `
+#img.shake {
+    animation: shake 0.5s;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+  }
+`;
+
+const scrollHandler = (root) => (event) => {
+  const txt = root.querySelector("#txt");
+  const scaleTxt = Math.max(0, 1000 - window.scrollY) / 1000;
+  txt.style.transform = scale(${scaleTxt});
+  dispatchSizeChange(root, scaleTxt);
+  const opacityTxt = 1 / Math.log10(Math.max(10, window.scrollY));
+  txt.style.opacity = opacityTxt;
+  const img = root.querySelector("#img");
+  img.style.transform = rotate(${window.scrollY / 10}deg);
+};
+
+const dispatchSizeChange = (root, scaleTxt) => {
+  const gettingSmall = scaleTxt === 0 && root.prevScaleTxt !== 0;
+  const gettingBig = scaleTxt !== 0 && root.prevScaleTxt === 0;
+  root.prevScaleTxt = scaleTxt;
+
+  if (gettingSmall || gettingBig) {
+    root.dispatchEvent(
+      new CustomEvent("sizeChange", {
+        detail: { data: gettingSmall ? "small" : "big" },
+      }),
+    );
+  }
+};
+
+const createImg = (id, src) => {
+  const img = document.createElement("img");
+  img.src = src;
+  img.id = id;
+  img.width = "200";
+  img.style.position = "fixed";
+  return img;
+};
+
+class allEffects extends HTMLElement {
+  constructor() {
+    super();
+    document.addEventListener("wheel", scrollHandler(this), {
+      capture: false,
+      passive: true,
+    });
+  }
+
+  connectedCallback() {
+    this.appendChild(createImg("txt", LOGO_TXT));
+    this.appendChild(createImg("img", LOGO_IMG));
+    const phone = createImg("phone", LOGO_PHONE);
+    phone.style.display = "none";
+    this.appendChild(phone);
+
+    const style = document.createElement("style");
+    style.innerHTML = STYLE;
+    this.appendChild(style);
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "hoveringmenu") {
+      this.querySelector("#img").className = newValue === "true" ? "shake" : "";
+    }
+    if (name === "footershown") {
+      this.querySelector("#phone").style.display =
+        newValue === "true" ? "" : "none";
+    }
+  }
+
+  static get observedAttributes() {
+    return ["hoveringmenu", "footershown"];
+  }
+}
+
+customElements.define("my-logo-effects", allEffects);
+
+class allEffects extends HTMLElement {
+  constructor() {
+    super();
+    document.addEventListener("wheel", scrollHandler(this), {
+      capture: false,
+      passive: true,
+    });
+  }
+
+  connectedCallback() {
+    this.appendChild(createImg("txt", LOGO_TXT));
+    this.appendChild(createImg("img", LOGO_IMG));
+    const phone = createImg("phone", LOGO_PHONE);
+    phone.style.display = "none";
+    this.appendChild(phone);
+
+    const style = document.createElement("style");
+    style.innerHTML = STYLE;
+    this.appendChild(style);
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "hoveringmenu") {
+      this.querySelector("#img").className = newValue === "true" ? "shake" : "";
+    }
+    if (name === "footershown") {
+      this.querySelector("#phone").style.display =
+        newValue === "true" ? "" : "none";
+    }
+  }
+
+  static get observedAttributes() {
+    return ["hoveringmenu", "footershown"];
+  }
+}
+
+import wixPaymentProviderBackend from "wix-payment-provider-backend";
+
+// An endpoint for receiving updates about transactions.
+export async function post_updateTransaction(request) {
+  const transactionRequestBody = await request.body.json();
+  const response = {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+  // Validate the request content.
+  if (transactionRequestBody.state === "Payment_Received") {
+    // Update the transaction status on your site. This code assumes that the Wix
+    // transaction ID and the payment provider's transaction ID are included in
+    // the URL as query parameters.
+    await wixPaymentProviderBackend.submitEvent({
+      event: {
+        transaction: {
+          wixTransactionId: request.query["wixTransactionId"],
+          pluginTransactionId: request.query["pluginTransactionId"],
+        },
+      },
+    });
+    return ok(response);
+  } else {
+    return badRequest(response);
+  }
+}
+
+// An endpoint for receiving updates about refunds.
+export async function post_updateRefund(request) {
+  const refundRequestBody = await request.body.json();
+  const response = {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+  // Validate the request content.
+  if (refundRequestBody.state === "approved") {
+    // Update the refund status on your site. This code assumes that Wix
+    // transaction and refund IDs as well as other refund information are
+    // included in the URL as query parameters.
+    await wixPaymentProviderBackend.submitEvent({
+      event: {
+        refund: {
+          wixTransactionId: request.query["wixTransactionId"],
+          wixRefundId: request.query["wixRefundId"],
+          pluginRefundId: refundRequestBody.reference_id,
+          amount: request.query["amount"],
+        },
+      },
+    });
+    return ok(response);
+  } else {
+    return badRequest(response);
+  }
+}
+
+{
+  "wixTransactionId": "6b264d6f-f54e-426a-a8ed-b6f103c86d46",
+  "paymentMethod": "385f25b8-79c0-4d44-914a-d6568a2cda5a",
+  "merchantCredentials": {
+    "client_id": "da5a42c8914a-568-4d-5f25b-44438d6a",
+    "client_secret": "38d6a2c5f25b8-568-4d-914a-da5a4444"
+  },
+  "order": {
+    "_id": "fb591a7c-8471-464a-a64c-181c449b07ed",
+    "description": {
+      "billingAddress": {
+        "city": "New York",
+        "email": "jane@doe.com",
+        "state": "NY",
+        "zipCode": "10014",
+        "lastName": "Jane",
+        "firstName": "Doe",
+        "countryCode": "US",
+        "address": "100 Gansevoort St",
+        "phone": "212-555-0100"
+      },
+      "items": [
+        {
+          "_id": "baeb40f5-a48a-4424-cec2-253c9772ad42",
+          "name": "Banana shirt",
+          "quantity": 1,
+          "price": "10000"
+        }
+      ],
+      "totalAmount": "10000",
+      "charges": {},
+      "buyerInfo": {
+        "buyerId": "9b5d1bed-6a1d-4980-9d2e-82713fb6bf0e",
+        "buyerLanguage": "en"
+      },
+      "currency": "EUR",
+      "shippingAddress": {
+        "city": "New York",
+        "email": "jane@doe.com",
+        "state": "NY",
+        "zipCode": "10014",
+        "lastName": "Jane",
+        "firstName": "Doe",
+        "countryCode": "US",
+        "address": "100 Gansevoort St",
+        "phone": "212-555-0100"
+      }
+    },
+    "returnUrls": {
+      "successUrl": "https://cashier-services.wix.com/_api/payment-services-web/redirect/success/b5f106b4-f78e-426a-a8ed-3c76d4696d6f",
+      "errorUrl": "https://cashier-services.wix.com/_api/payment-services-web/redirect/error/b5f106b4-f78e-426a-a8ed-3c76d4696d6f?pmName=EmptyPayment&pmUrl=&failureCode=6000",
+      "cancelUrl": "https://cashier-services.wix.com/_api/payment-services-web/redirect/cancel/b5f106b4-f78e-426a-a8ed-3c76d4696d6f",
+      "pendingUrl": "https://cashier-services.wix.com/_api/payment-services-web/redirect/pending/b5f106b4-f78e-426a-a8ed-3c76d4696d6f"
+    }
+  },
+  "wixMerchantId": "ed2bfda6-134e-4cc9-a37f-756c6843e01d",
+  "fraudInformation": {
+    "remoteIp": "145.231.63.45"
+  }
+}
+
+{
+  title: 'Banana Payments',
+  paymentMethods: [{
+    hostedPage: {
+      title: 'Banana Payments',
+      billingAddressMandatoryFields: ['CITY'],
+      logos: {
+        white: {
+          svg: 'https://static.wixstatic.com/shapes/94b5e2_403ceb582027431cb92f38fd18d1843c.svg',
+          png: 'https://freesvg.org/img/15930333081593032446pitr_Bananas_icon.png'
+        },
+        colored: {
+          svg: 'https://static.wixstatic.com/shapes/94b5e2_403ceb582027431cb92f38fd18d1843c.svg',
+          png: 'https://freesvg.org/img/15930333081593032446pitr_Bananas_icon.png'
+        }
+      }
+    }
+  }],
+  credentialsFields: [{
+    simpleField: {
+      name: 'clientId',
+      label: 'API id'
+    }
+  }, 
+  {
+    simpleField: {
+      name: 'clientSecret',
+      label: 'API secret'
+    }
+  }]
+}
+
+/**************************
+ * backend code - pay.web.js *
+ **************************/
+
+import { Permissions, webMethod } from "wix-web-module";
+import wixPay from "wix-pay-backend";
+
+export const createMyPayment = webMethod(Permissions.Anyone, () => {
+  // Step 3 - Create payment info object.
+  // Here we use static data. You might want to use data from a
+  // collection. To see an example of such a usage, see the API Reference.
+  let paymentInfo = {
+    items: [
+      {
+        name: "Product 1",
+        price: 9.99,
+      },
+      {
+        name: "Product 2",
+        price: 19.99,
+      },
+    ],
+    amount: 29.98,
+  };
+
+  // Step 4 - Call createPayment() with the payment information
+  // and return the paymentId.
+  // (Next, see step 5 in the client-side code above.)
+  return wixPay.createPayment(paymentInfo);
+});
+
+/********************
+ * client-side code *
+ ********************/
+
+import { createMyPayment } from "backend/pay.web";
+import wixPayFrontend from "wix-pay-frontend";
+import wixWindowFrontend from "wix-window-frontend";
+
+// Step 1 - User clicks a button.
+export function myButton_click(event) {
+  // Step 2 - Call backend function.
+  // (Next, see step 3 in the backend code below.)
+  createMyPayment()
+    // When the payment has been created and a paymentId has been returned:
+    .then((payment) => {
+      // Step 5 - Call the startPayment() function with the paymentId.
+      // Include PaymentOptions to customize the payment experience.
+      wixPayFrontend
+        .startPayment(payment.id, {
+          showThankYouPage: false,
+          termsAndConditionsLink: "https://mysite.com/terms",
+        })
+        // Step 6 - Visitor enters the payment information.
+        // When the payment form is completed:
+        .then((result) => {
+          // Step 7 - Handle the payment result.
+          // (Next, see step 8 in the backend code below.)
+          if (result.status === "Successful") {
+            wixWindowFrontend.openLightbox("Success Box");
+          } else if (result.status === "Pending") {
+            wixWindowFrontend.openLightbox("Pending Box");
+          }
+        });
+    });
+}
+
+authentication.onLogin(async (member) => {
+      const loggedInMember = await member.getMember(); 
+      memberId = loggedInMember._id;
+      memberEmail = loggedInMember.loginEmail;
+      return wixData.query("Members")
+      .eq("_id", memberId)
+      .find()
+      .then((results) => {
+        if (results.Members.length === 0) {
+          const toInsert = {
+            "_id": memberId,
+            "email": memberEmail
+          };
+          wixData.insert("Members", toInsert)
+          .catch( (err) => {
+            console.log(err);
+          } );
+        }
+      })
+      .catch( (err) => {
+        console.log(err);
+      });
+    });
+  }
+});
+
+export async function loginButton_click(event) {
+  if ((await checkIfLoggedIn()) === true) {
+    authentication.logout();
+    console.log("Member is logged out.");
+    $w("#loginButton").label = "Login";
+    $w("#profileButton").hide();
+  } else {
+    authentication
+      .promptLogin({ mode: "login" })
+      .then(() => {
+        console.log("Member is logged in.");
+        $w("#loginButton").label = "Logout";
+        $w("#profileButton").show();
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+}
+
+import { currentMember, authentication } from "wix-members-frontend";
+import wixData from "wix-data";
+import wixLocationFrontend from "wix-location-frontend";
+
+let memberId, memberEmail;
+
+async function checkIfLoggedIn() {
+  const thisMember = await currentMember.getMember();
+  return thisMember ? true : false;
+}
+
+$w.onReady(() => {
+  if (wixWindowFrontend.rendering.env === "browser") {
+    checkIfLoggedIn().then((res) => {
+      if (res === true) {
+        $w("#loginButton").label = "Logout";
+        $w("#profileButton").show();
+      } else {
+        $w("#loginButton").label = "Login";
+        $w("#profileButton").hide();
+      }
+    });
+    authentication.onLogin(async (member) => {
+      const loggedInMember = await member.getMember();
+      memberId = loggedInMember._id;
+      memberEmail = loggedInMember.loginEmail;
+      return wixData
+        .query("Members")
+        .eq("_id", memberId)
+        .find()
+        .then((results) => {
+          if (results.Members.length === 0) {
+            const toInsert = {
+              _id: memberId,
+              email: memberEmail,
+            };
+            wixData.insert("Members", toInsert).catch((err) => {
+              console.log(err);
+            });
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    });
+  }
+});
+
+export async function loginButton_click(event) {
+  if ((await checkIfLoggedIn()) === true) {
+    authentication.logout();
+    console.log("Member is logged out.");
+    $w("#loginButton").label = "Login";
+    $w("#profileButton").hide();
+  } else {
+    authentication
+      .promptLogin({ mode: "login" })
+      .then(() => {
+        console.log("Member is logged in.");
+        $w("#loginButton").label = "Logout";
+        $w("#profileButton").show();
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+}
+
+export async function profileButton_click(event) {
+  let loggedInMember = await currentMember.getMember();
+  memberId = loggedInMember._id;
+  wixLocationFrontend.to(/items/${memberId});
+}
+
+let options = {
+     contactInfo: {
+       firstName: $w('#firstName').value,
+       lastName: $w('#lastName').value,
+       emails: emails,
+       labels: labels,
+       height: Number($w('#height').value)
+     },
+     privacyStatus: 'PUBLIC'
+   }
+  
+ authentication.register(email, password, options)
+   .then((registrationResult) => {
+     const status = registrationResult.status;
+     // When the site is configured for automatic approval, status is "ACTIVE" and the member is approved and logged in.
+     console.log('Member registered and logged in:', registrationResult);
+   })
+   .catch((error) => {
+     console.error(error);
+   });
+ });
+});
+
+import { authentication } from "wix-members-frontend";
+
+let emails = [];
+let labels = [];
+
+$w.onReady(function () {
+  $w("#register").onClick(() => {
+    const password = $w("#password").value;
+    const height = Number($w("#height").value);
+    const email = $w("#email").value;
+    emails.push(email);
+
+    // Calculate the proper height label
+    if (height < 74) {
+      labels.push("Not Tall");
+    } else if (height < 78) {
+      labels.push("Tall");
+    } else if (height < 82) {
+      labels.push("Very Tall");
+    } else {
+      labels.push("Too Tall");
+    }
+
+    let options = {
+      contactInfo: {
+        firstName: $w("#firstName").value,
+        lastName: $w("#lastName").value,
+        emails: emails,
+        labels: labels,
+        height: Number($w("#height").value),
+      },
+      privacyStatus: "PUBLIC",
+    };
+
+    authentication
+      .register(email, password, options)
+      .then((registrationResult) => {
+        const status = registrationResult.status;
+        // When the site is configured for automatic approval, status is "ACTIVE" and the member is approved and logged in.
+        console.log("Member registered and logged in:", registrationResult);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  });
+});
