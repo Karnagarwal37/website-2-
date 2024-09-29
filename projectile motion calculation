@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <math.h>
+
+// Define gravitational constant
+#define G 9.8 // Acceleration due to gravity in m/s^2
+
+// Function to calculate projectile motion
+void calculate_projectile_motion(double angle, double initial_velocity, double height) {
+    // Convert angle from degrees to radians
+    double theta = angle * M_PI / 180.0;
+    
+    // Calculate the components of initial velocity
+    double u_x = initial_velocity * cos(theta); // Horizontal component of velocity
+    double u_y = initial_velocity * sin(theta); // Vertical component of velocity
+
+    // Time of flight (derived from vertical motion equation)
+    double time_of_flight = (u_y + sqrt(u_y * u_y + 2 * G * height)) / G;
+
+    // Maximum height (reached when vertical velocity is zero)
+    double max_height = height + (u_y * u_y) / (2 * G);
+
+    // Range (horizontal distance covered)
+    double range = u_x * time_of_flight;
+
+    // Final velocity before touching the ground (using energy conservation or kinematic equation)
+    double v_y_final = sqrt(u_y * u_y + 2 * G * height); // Final vertical velocity
+    double final_velocity = sqrt(u_x * u_x + v_y_final * v_y_final); // Resultant velocity
+
+    // Output results
+    printf("\nResults:\n");
+    printf("Time of Flight: %.2f s\n", time_of_flight);
+    printf("Maximum Height: %.2f m\n", max_height);
+    printf("Range: %.2f m\n", range);
+    printf("Final Velocity Before Touching the Ground: %.2f m/s\n", final_velocity);
+}
+
+int main() {
+    double angle, initial_velocity, height;
+
+    // Take inputs from the user
+    printf("Enter the angle of projection (degrees): ");
+    scanf("%lf", &angle);
+
+    printf("Enter the initial velocity (m/s): ");
+    scanf("%lf", &initial_velocity);
+
+    printf("Enter the height of the tower (m): ");
+    scanf("%lf", &height);
+
+    // Call the function to perform the calculations
+    calculate_projectile_motion(angle, initial_velocity, height);
+
+    return 0;
+}
