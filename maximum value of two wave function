@@ -1,0 +1,51 @@
+#include <stdio.h>
+#include <math.h>
+
+#define PI 3.141592653589793
+
+// Function to calculate the maximum values for the wave equation
+void calculate_wave_properties(double amplitude, double w, double T, double phase_angle) {
+    // Derived values
+    double max_displacement = amplitude; // Maximum displacement is the amplitude itself
+
+    // Maximum velocity (v_max = A * ω)
+    double max_velocity = amplitude * w;
+
+    // Maximum acceleration (a_max = A * ω^2)
+    double max_acceleration = amplitude * w * w;
+
+    // Time at which the maximum displacement occurs
+    double t_max_displacement = -phase_angle / w;
+
+    // Output the results
+    printf("\nWave Properties:\n");
+    printf("Maximum Displacement: %.2f units\n", max_displacement);
+    printf("Maximum Velocity: %.2f units/s\n", max_velocity);
+    printf("Maximum Acceleration: %.2f units/s²\n", max_acceleration);
+    printf("Time at Maximum Displacement: %.2f s\n", t_max_displacement);
+}
+
+int main() {
+    double amplitude, w, T, phase_angle;
+
+    // Take inputs from the user
+    printf("Enter the amplitude (A): ");
+    scanf("%lf", &amplitude);
+
+    printf("Enter the angular frequency (ω) in rad/s: ");
+    scanf("%lf", &w);
+
+    printf("Enter the time period (T) in seconds: ");
+    scanf("%lf", &T);
+
+    printf("Enter the phase angle (φ) in degrees: ");
+    scanf("%lf", &phase_angle);
+
+    // Convert phase angle from degrees to radians
+    phase_angle = phase_angle * PI / 180.0;
+
+    // Call the function to calculate the wave properties
+    calculate_wave_properties(amplitude, w, T, phase_angle);
+
+    return 0;
+}
