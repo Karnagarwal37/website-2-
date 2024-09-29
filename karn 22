@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include <math.h>
+
+#define PI 3.14159265
+#define GRAVITY 9.81  // Acceleration due to gravity in m/s^2
+
+// Function to convert degrees to radians
+double degreesToRadians(double degrees) {
+    return degrees * (PI / 180.0);
+}
+
+// Function to calculate the time of flight
+double timeOfFlight(double v0, double angle, double height) {
+    double radianAngle = degreesToRadians(angle);
+    double vy = v0 * sin(radianAngle);  // Initial vertical velocity
+    return (vy + sqrt(vy * vy + 2 * GRAVITY * height)) / GRAVITY;
+}
+
+// Function to calculate the horizontal range (distance)
+double horizontalRange(double v0, double angle, double time) {
+    double radianAngle = degreesToRadians(angle);
+    double vx = v0 * cos(radianAngle);  // Initial horizontal velocity
+    return vx * time;
+}
+
+// Function to calculate the maximum height
+double maxHeight(double v0, double angle, double height) {
+    double radianAngle = degreesToRadians(angle);
+    double vy = v0 * sin(radianAngle);  // Initial vertical velocity
+    return height + (vy * vy) / (2 * GRAVITY);
+}
+
+// Function to calculate the final velocity before touching the ground
+double finalVelocity(double v0, double angle, double height) {
+    double radianAngle = degreesToRadians(angle);
+    double vx = v0 * cos(radianAngle);  // Horizontal velocity remains constant
+    double vy_initial = v0 * sin(radianAngle);  // Initial vertical velocity
+    double vy_final = sqrt(vy_initial * vy_initial + 2 * GRAVITY * height);  // Final vertical velocity
+    
+    return sqrt(vx * vx + vy_final * vy_final);  // Resultant final velocity
+}
+
+int main() {
+    double v0, angle, height;
+
+    // Input initial parameters
+    printf("Enter the initial velocity (m/s): ");
+    scanf("%lf", &v0);
+
+    printf("Enter the launch angle (degrees): ");
+    scanf("%lf", &angle);
+
+    printf("Enter the height of the tower (m): ");
+    scanf("%lf", &height);
+
+    // Calculate time of flight
+    double time = timeOfFlight(v0, angle, height);
+
+    // Calculate horizontal range
+    double range = horizontalRange(v0, angle, time);
+
+    // Calculate maximum height
+    double max_height = maxHeight(v0, angle, height);
+
+    // Calculate final velocity before hitting the ground
+    double final_velocity = finalVelocity(v0, angle, height);
+
+    // Display the results
+    printf("\nResults:\n");
+    printf("Time of flight: %.2f seconds\n", time);
+    printf("Horizontal range: %.2f meters\n", range);
+    printf("Maximum height: %.2f meters\n", max_height);
+    printf("Final velocity before touching the ground: %.2f m/s\n", final_velocity);
+
+    return 0;
+}
